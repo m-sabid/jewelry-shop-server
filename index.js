@@ -83,6 +83,20 @@ async function run() {
       res.json({ token });
     });
 
+        // Users related APIs
+        app.post("/users", async (req, res) => {
+          const user = req.body;
+          const query = { email: user.email };
+          const existingUser = await usersCollection.findOne(query);
+    
+          if (existingUser) {
+            return res.json({ message: "User already exists" });
+          }
+    
+          const result = await usersCollection.insertOne(user);
+          res.json(result);
+        });
+
 
   } finally {
     // Ensure that the client will close when you finish/error
