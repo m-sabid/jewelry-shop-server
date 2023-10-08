@@ -77,8 +77,13 @@ async function run() {
       res.send("Running...");
     });
 
+    app.post("/jwt", (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: "1h" });
+      res.json({ token });
+    });
 
-    
+
   } finally {
     // Ensure that the client will close when you finish/error
     // await client.close();
