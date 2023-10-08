@@ -102,6 +102,31 @@ async function run() {
           res.json(result);
         });
     
+        app.get("/users/admin/:email", verifyJWT, async (req, res) => {
+          const email = req.params.email;
+    
+          if (req.decoded.email !== email) {
+            res.json({ admin: false });
+          }
+    
+          const query = { email: email };
+          const user = await usersCollection.findOne(query);
+          const result = { admin: user?.role === "admin" };
+          res.json(result);
+        });
+    
+        app.get("/users/clint/:email", verifyJWT, async (req, res) => {
+          const email = req.params.email;
+    
+          if (req.decoded.email !== email) {
+            res.json({ clint: false });
+          }
+    
+          const query = { email: email };
+          const user = await usersCollection.findOne(query);
+          const result = { clint: user?.role === "clint" };
+          res.json(result);
+        });
 
 
   } finally {
