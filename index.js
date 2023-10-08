@@ -160,6 +160,122 @@ async function run() {
       }
     });
 
+        // product related APIs
+        app.post("/api/products", async (req, res) => {
+          try {
+            const { title, seats, price, image, clintName, clintEmail } = req.body;
+    
+            // Parse seats and price as numbers
+            const parsedSeats = parseInt(seats);
+            const parsedPrice = parseFloat(price);
+    
+            // Save the new product to MongoDB
+            const result = await manageProductsCollection.insertOne({
+              title,
+              seats: parsedSeats,
+              price: parsedPrice,
+              image,
+              clintEmail,
+              clintName,
+              status: "pending",
+              quantity: 0,
+            });
+    
+            if (result.insertedId) {
+              // New product added successfully
+              res.json({ success: true });
+            } else {
+              // Failed to add the product
+              res.json({ success: false });
+            }
+          } catch (error) {
+            console.error("Error adding a new product to MongoDB:", error);
+            res.status(500).json({ error: "Internal Server Error" });
+          }
+        });
+    
+        app.get("/api/all-products", async (req, res) => {
+          const result = await productsCollection.find().toArray();
+          res.json(result);
+        });
+    
+        app.get("/api/products", verifyJWT, verifyAdmin, async (req, res) => {
+          const result = await manageProductsCollection.find().toArray();
+          res.json(result);
+        });
+    
+        app.patch("/api/products/:id", async (req, res) => {
+          try {
+            const id = req.params.id;
+            const { status, feedback } = req.body;
+    
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {};
+    
+            if (status) {
+              updateDoc.$set = { status };
+            }
+    
+            if (feedback) {
+              updateDoc.$set = { feedback };
+            }
+    
+            const result = await manageProductsCollection.updateOne(
+              filter,
+              updateDoc
+            );
+    
+            if (result.modifiedCount === 1) {
+              if (feedback) {
+                await productsCollection.updateOne(filter, { $set: { feedback } });
+              }
+    
+              if (status === "approved") {
+                const productData = await manageProductsCollection.findOne(filter);
+                await productsCollection.insertOne(productData);
+              } else if (status === "denied") return res.json({ success: true });
+            } else {
+              return res.json({ success: false });
+            }
+          } catch (error) {
+            console.error("Error updating product status in MongoDB:", error);
+            return res.status(500).json({ error: "Internal Server Error" });
+          }
+        });
+    
+        app.delete("/api/Products/:id", async (req, res) => {
+          try {
+            const id = req.params.id;
+    
+            const filter = { _id: new ObjectId(id) };
+    
+            const result = await productsCollection.deleteOne(filter);
+    
+            if (result.deletedCount === 1) {
+              return res.json({ success: true });
+            } else {
+              return res.json({ success: false });
+            }
+          } catch (error) {
+            console.error("Error deleting product from MongoDB:", error);
+            return res.status(500).json({ error: "Internal Server Error" });
+          }
+        });
+    
+        app.get("/api/popular-products", async (req, res) => {
+          try {
+            const popularProducts = await productsCollection
+              .find()
+              .sort({ quantity: -1 })
+              .limit(6)
+              .toArray();
+    
+            res.json(popularProducts);
+          } catch (error) {
+            console.error(error);
+            res.status(500).json({ error: true, message: "An error occurred" });
+          }
+        });
 
   } finally {
     // Ensure that the client will close when you finish/error
