@@ -128,6 +128,38 @@ async function run() {
           res.json(result);
         });
 
+        
+    app.patch("/user/role/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const { role } = req.body;
+
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: {
+            role: role,
+          },
+        };
+
+        const usersCollection = client
+          .db("jewelry_shop_db")
+          .collection("users");
+
+        const result = await usersCollection.updateOne(filter, updateDoc);
+
+        if (result.modifiedCount === 1) {
+          // Role updated successfully
+          return res.json({ success: true });
+        } else {
+          // Failed to update the role
+          return res.json({ success: false });
+        }
+      } catch (error) {
+        console.error("Error updating user role in MongoDB:", error);
+        return res.status(500).json({ error: "Internal Server Error" });
+      }
+    });
+
 
   } finally {
     // Ensure that the client will close when you finish/error
