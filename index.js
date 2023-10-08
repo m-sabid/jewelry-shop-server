@@ -24,6 +24,23 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     await client.connect(); 
+
+        // Collections
+        const usersCollection = client.db("jewelry_shop_db").collection("users");
+        const productsCollection = client
+          .db("jewelry_shop_db")
+          .collection("Products");
+        const manageProductsCollection = client
+          .db("jewelry_shop_db")
+          .collection("manage-Products");
+        const cartCollection = client.db("jewelry_shop_db").collection("carts");
+        const paymentCollection = client
+          .db("jewelry_shop_db")
+          .collection("payments");
+        const buyCollection = client
+          .db("jewelry_shop_db")
+          .collection("buy");
+
   } finally {
     // Ensure that the client will close when you finish/error
     // await client.close();
