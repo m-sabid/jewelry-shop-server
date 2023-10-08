@@ -6,9 +6,7 @@ require("dotenv").config();
 const { MongoClient, ObjectId } = require("mongodb");
 const stripe = require("stripe")(process.env.SECRET_KEY_PAYMENT);
 
-
 const port = process.env.PORT || 5000;
-
 
 // middleware
 app.use(cors());
@@ -23,24 +21,45 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    await client.connect(); 
+    await client.connect();
 
-        // Collections
-        const usersCollection = client.db("jewelry_shop_db").collection("users");
-        const productsCollection = client
-          .db("jewelry_shop_db")
-          .collection("Products");
-        const manageProductsCollection = client
-          .db("jewelry_shop_db")
-          .collection("manage-Products");
-        const cartCollection = client.db("jewelry_shop_db").collection("carts");
-        const paymentCollection = client
-          .db("jewelry_shop_db")
-          .collection("payments");
-        const buyCollection = client
-          .db("jewelry_shop_db")
-          .collection("buy");
+    // Collections
+    const usersCollection = client.db("jewelry_shop_db").collection("users");
+    const productsCollection = client
+      .db("jewelry_shop_db")
+      .collection("Products");
+    const manageProductsCollection = client
+      .db("jewelry_shop_db")
+      .collection("manage-Products");
+    const cartCollection = client.db("jewelry_shop_db").collection("carts");
+    const paymentCollection = client
+      .db("jewelry_shop_db")
+      .collection("payments");
+    const buyCollection = client.db("jewelry_shop_db").collection("buy");
 
+    // JWT verification middleware
+    const verifyJWT = (req, res, next) => {
+      const authorization = req.headers.authorization;
+      if (!authorization) {
+        return res
+          .status(401)
+          .send({ error: true, message: "unauthorized access" });
+      }
+      // bearer token
+      const token = authorization.split(" ")[1];
+
+      jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        if (err) {
+          return res
+            .status(401)
+            .send({ error: true, message: "unauthorized access" });
+        }
+        req.decoded = decoded;
+        next();
+      });
+    };
+
+    
   } finally {
     // Ensure that the client will close when you finish/error
     // await client.close();
