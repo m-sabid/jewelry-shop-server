@@ -277,6 +277,43 @@ async function run() {
           }
         });
 
+            // Cart related routes
+    app.post("/api/products/cart", async (req, res) => {
+      const item = req.body;
+      const existingItem = await cartCollection.findOne(item);
+      if (existingItem) {
+        return res.status(400).json({ message: "Item already exists" });
+      }
+
+      const result = await cartCollection.insertOne(item);
+      res.json(result);
+    });
+
+    app.get("/api/all-carts", async (req, res) => {
+      const result = await cartCollection.find().toArray();
+      res.json(result);
+    });
+
+    app.delete("/api/carts/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+
+        const filter = { _id: new ObjectId(id) };
+
+        const result = await cartCollection.deleteOne(filter);
+
+        if (result.deletedCount === 1) {
+          return res.json({ success: true });
+        } else {
+          return res.json({ success: false });
+        }
+      } catch (error) {
+        console.error("Error deleting product from MongoDB:", error);
+        return res.status(500).json({ error: "Internal Server Error" });
+      }
+    });
+
+
   } finally {
     // Ensure that the client will close when you finish/error
     // await client.close();
