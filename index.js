@@ -60,6 +60,25 @@ async function run() {
     };
 
     
+    // Admin verification middleware
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      if (user?.role !== "admin") {
+        return res
+          .status(403)
+          .send({ error: true, message: "forbidden message" });
+      }
+      next();
+    };
+
+    app.get("/", (req, res) => {
+      res.send("Running...");
+    });
+
+
+    
   } finally {
     // Ensure that the client will close when you finish/error
     // await client.close();
