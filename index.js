@@ -313,6 +313,54 @@ async function run() {
       }
     });
 
+       // payment related api
+       app.post("/create-payment-intent", async (req, res) => {
+        const { price } = req.body;
+        const amount = price * 100;
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: amount,
+          currency: "usd",
+          automatic_payment_methods: {
+            enabled: true,
+          },
+        });
+  
+        res.send({
+          clientSecret: paymentIntent.client_secret,
+        });
+      });
+  
+      app.post("/api/payments", verifyJWT, async (req, res) => {
+        try {
+          const payment = req.body;
+          const { id, productId } = payment;
+  
+          // Update the product collection to increment the students count
+          await productsCollection.updateOne(
+            { _id: new ObjectId(productId) },
+            { $inc: { students: 1, seats: -1 } }
+          );
+  
+          // Insert the payment into the payment collection
+          const insertResult = await paymentCollection.insertOne(payment);
+  
+          // Remove the product from the user's cart
+          const deleteResult = await cartCollection.deleteOne({
+            _id: new ObjectId(id),
+          });
+  
+          // Insert the enrolled product into the enrolled collection
+          const buyProduct = await buyCollection.insertOne({
+            _id: new ObjectId(productId),
+          });
+  
+          res.send({ insertResult, deleteResult });
+        } catch (error) {
+          console.error("Error processing payment:", error);
+          return res.status(500).json({ error: "Internal Server Error" });
+        }
+      });
+
 
   } finally {
     // Ensure that the client will close when you finish/error
