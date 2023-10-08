@@ -97,6 +97,12 @@ async function run() {
           res.json(result);
         });
 
+        app.get("/users", async (req, res) => {
+          const result = await usersCollection.find().toArray();
+          res.json(result);
+        });
+    
+
 
   } finally {
     // Ensure that the client will close when you finish/error
