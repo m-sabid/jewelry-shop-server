@@ -28,9 +28,6 @@ async function run() {
     const productsCollection = client
       .db("jewelry_shop_db")
       .collection("Products");
-    const manageProductsCollection = client
-      .db("jewelry_shop_db")
-      .collection("manage-Products");
     const cartCollection = client.db("jewelry_shop_db").collection("carts");
     const paymentCollection = client
       .db("jewelry_shop_db")
@@ -163,22 +160,21 @@ async function run() {
     // product related APIs
     app.post("/api/products", async (req, res) => {
       try {
-        const { title, seats, price, image, clintName, clintEmail } = req.body;
+        const { title, quantity, price, image, adminName, adminEmail } = req.body;
 
-        // Parse seats and price as numbers
-        const parsedSeats = parseInt(seats);
+        // Parse quantity and price as numbers
+        const parsedQuantity = parseInt(quantity);
         const parsedPrice = parseFloat(price);
 
         // Save the new product to MongoDB
-        const result = await manageProductsCollection.insertOne({
+        const result = await productsCollection.insertOne({
           title,
-          seats: parsedSeats,
+          quantity: parsedQuantity,
           price: parsedPrice,
           image,
-          clintEmail,
-          clintName,
-          status: "pending",
-          quantity: 0,
+          adminEmail,
+          adminName,
+          status: "approved",
         });
 
         if (result.insertedId) {
@@ -199,51 +195,7 @@ async function run() {
       res.json(result);
     });
 
-    app.get("/api/products", verifyJWT, verifyAdmin, async (req, res) => {
-      const result = await manageProductsCollection.find().toArray();
-      res.json(result);
-    });
-
-    app.patch("/api/products/:id", async (req, res) => {
-      try {
-        const id = req.params.id;
-        const { status, feedback } = req.body;
-
-        const filter = { _id: new ObjectId(id) };
-        const updateDoc = {};
-
-        if (status) {
-          updateDoc.$set = { status };
-        }
-
-        if (feedback) {
-          updateDoc.$set = { feedback };
-        }
-
-        const result = await manageProductsCollection.updateOne(
-          filter,
-          updateDoc
-        );
-
-        if (result.modifiedCount === 1) {
-          if (feedback) {
-            await productsCollection.updateOne(filter, { $set: { feedback } });
-          }
-
-          if (status === "approved") {
-            const productData = await manageProductsCollection.findOne(filter);
-            await productsCollection.insertOne(productData);
-          } else if (status === "denied") return res.json({ success: true });
-        } else {
-          return res.json({ success: false });
-        }
-      } catch (error) {
-        console.error("Error updating product status in MongoDB:", error);
-        return res.status(500).json({ error: "Internal Server Error" });
-      }
-    });
-
-    app.delete("/api/Products/:id", async (req, res) => {
+    app.delete("/api/products/:id", async (req, res) => {
       try {
         const id = req.params.id;
 
